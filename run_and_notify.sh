@@ -83,54 +83,54 @@ cleanup_and_notify() {
 trap cleanup_and_notify EXIT INT TERM
 
 # --- Training Phase ---
-# echo "--- Starting Training Phase: ${TRAIN_SCRIPT_ID} ---"
-# echo "Logging to ${TRAIN_LOG}"
+echo "--- Starting Training Phase: ${TRAIN_SCRIPT_ID} ---"
+echo "Logging to ${TRAIN_LOG}"
 
-# # Command 1
-# echo "Running Training Command 1..."
-# CUDA_VISIBLE_DEVICES=2,3 python3 train_decoding.py --model_name T5Translator \
-#     --task_name task1_task2_taskNRv2 \
-#     --one_step \
-#     --pretrained \
-#     --not_load_step1_checkpoint \
-#     --num_epoch_step1 20 \
-#     --num_epoch_step2 30 \
-#     --train_input EEG \
-#     -lr1 0.00002 \
-#     -lr2 0.00002 \
-#     -b 32 \
-#     -s ./checkpoints/decoding > >(tee -a "${TRAIN_LOG}") 2>&1 # Log stdout/stderr
+# Command 1
+echo "Running Training Command 1..."
+CUDA_VISIBLE_DEVICES=2,3 python3 train_decoding.py --model_name T5Translator \
+    --task_name task1_task2_taskNRv2 \
+    --one_step \
+    --pretrained \
+    --not_load_step1_checkpoint \
+    --num_epoch_step1 20 \
+    --num_epoch_step2 30 \
+    --train_input EEG \
+    -lr1 0.00002 \
+    -lr2 0.00002 \
+    -b 32 \
+    -s ./checkpoints/decoding > >(tee -a "${TRAIN_LOG}") 2>&1 # Log stdout/stderr
 
-# if [[ $? -ne 0 ]]; then
-#     echo "ERROR: ${TRAIN_SCRIPT_ID} - Command 1 failed." | tee -a "$STATUS_FILE"
-#     OVERALL_STATUS="FAILURE"
-#     exit 1 # Exit immediately upon failure
-# fi
-# echo "Training Command 1 finished."
+if [[ $? -ne 0 ]]; then
+    echo "ERROR: ${TRAIN_SCRIPT_ID} - Command 1 failed." | tee -a "$STATUS_FILE"
+    OVERALL_STATUS="FAILURE"
+    exit 1 # Exit immediately upon failure
+fi
+echo "Training Command 1 finished."
 
-# # Command 2
-# echo "Running Training Command 2..."
-# CUDA_VISIBLE_DEVICES=2,3 python3 train_decoding.py --model_name T5Translator \
-#     --task_name task1_task2_task3 \
-#     --one_step \
-#     --pretrained \
-#     --not_load_step1_checkpoint \
-#     --num_epoch_step1 20 \
-#     --num_epoch_step2 30 \
-#     --train_input EEG \
-#     -lr1 0.00002 \
-#     -lr2 0.00002 \
-#     -b 32 \
-#     -s ./checkpoints/decoding >> >(tee -a "${TRAIN_LOG}") 2>&1 # Append log stdout/stderr
+# Command 2
+echo "Running Training Command 2..."
+CUDA_VISIBLE_DEVICES=2,3 python3 train_decoding.py --model_name T5Translator \
+    --task_name task1_task2_task3 \
+    --one_step \
+    --pretrained \
+    --not_load_step1_checkpoint \
+    --num_epoch_step1 20 \
+    --num_epoch_step2 30 \
+    --train_input EEG \
+    -lr1 0.00002 \
+    -lr2 0.00002 \
+    -b 32 \
+    -s ./checkpoints/decoding >> >(tee -a "${TRAIN_LOG}") 2>&1 # Append log stdout/stderr
 
-# if [[ $? -ne 0 ]]; then
-#     echo "ERROR: ${TRAIN_SCRIPT_ID} - Command 2 failed." | tee -a "$STATUS_FILE"
-#     OVERALL_STATUS="FAILURE"
-#     exit 1 # Exit immediately upon failure
-# fi
-# echo "Training Command 2 finished."
+if [[ $? -ne 0 ]]; then
+    echo "ERROR: ${TRAIN_SCRIPT_ID} - Command 2 failed." | tee -a "$STATUS_FILE"
+    OVERALL_STATUS="FAILURE"
+    exit 1 # Exit immediately upon failure
+fi
+echo "Training Command 2 finished."
 
-# echo "--- Training Phase Successfully Completed ---"
+echo "--- Training Phase Successfully Completed ---"
 
 
 # --- Evaluation Phase ---
