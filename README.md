@@ -1,109 +1,125 @@
-The **main branch** contains the final code for our "Are EEG-to-Text Models Working?" paper. 
+# EEG-To-Text and Sentiment Analysis
 
-Accepted by [IJCAI workshop 2024](https://github.com/user-attachments/files/16624318/IJCAI_hyejeongjo_poster_Final.pdf)
+This project explores the translation of Electroencephalography (EEG) signals into natural language text and the classification of sentiment directly from EEG signals. It utilizes various deep learning models, primarily sequence-to-sequence architectures and classifiers, trained and evaluated on the ZuCo dataset.
 
-If you have any questions, you can write them in the Issues section or email Hyejeong Jo at girlsending0@khu.ac.kr.
+## Features
 
-check our new paper with full detailed comparison of different models on this task at [https://arxiv.org/abs/2405.06459](https://arxiv.org/abs/2405.06459)
+* **EEG-to-Text Decoding:** Translates brain activity recorded via EEG into corresponding text using models like BrainTranslator and T5Translator.
+* **EEG-based Sentiment Analysis:** Classifies sentiment (e.g., positive, negative, neutral) directly from EEG signals using baseline models (MLP, LSTM) and fine-tuned transformers.
+* **Text-based Sentiment Classification:** Includes scripts for training standard text classifiers (BERT, BART, RoBERTa) on datasets like the Stanford Sentiment Treebank (SST) for comparison or zero-shot approaches.
+* **Zero-Shot Sentiment Discovery:** Explores predicting sentiment from EEG by first decoding EEG to text and then classifying the generated text using a pre-trained text sentiment classifier.
 
-overview
-![image](https://github.com/NeuSpeech/EEG-To-Text/assets/151606332/57212488-b75f-44c7-a265-e2a51483e9f5)
+## Models Implemented
 
-performance
-![image](https://github.com/NeuSpeech/EEG-To-Text/assets/151606332/df58870c-5277-4935-8c66-15efd58e9283)
+* **Decoding Models:**
+  * `BrainTranslator` (based on BART)
+  * `BrainTranslatorNaive` (simplified BART-based)
+  * `T5Translator` (based on T5)
+* **Sentiment Models (EEG-based):**
+  * `BaselineMLPSentence`
+  * `BaselineLSTM`
+  * `NaiveFineTunePretrainedBert` (EEG input adapted for BERT)
+* **Sentiment Models (Text-based):**
+  * Fine-tuned `BertForSequenceClassification`
+  * Fine-tuned `BartForSequenceClassification`
+  * Fine-tuned `RobertaForSequenceClassification`
+* **Zero-Shot Pipeline:**
+  * `ZeroShotSentimentDiscovery` (combines a decoder and a text classifier)
 
+## Datasets
 
+* **ZuCo Dataset:** The primary dataset containing EEG recordings synchronized with reading tasks (Task 1-SR, Task 2-NR, Task 3-TSR, Task 2-NR-2.0).
+* **Stanford Sentiment Treebank (SST):** Used for training text-based sentiment classifiers. A filtered version is generated to avoid overlap with ZuCo sentences.
 
-# Correction on [(AAAI 2022) Open Vocabulary EEG-To-Text Decoding and Zero-shot sentiment classification](https://arxiv.org/abs/2112.02690)
-# results and code is updated on **master** branch
-# results and code is updated on **master** branch
-# results and code is updated on **master** branch
-**First of all, we are not pointing at others, we do this correction due to no offense, but a kind reminder of being careful of the string generation process. 
-We repsect Mr. Wang very much, and appreciate his great contribution in this area.**
+## Setup
 
-After scrutilizing [the original code shared by Wang Zhenhailong](https://github.com/MikeWangWZHL/EEG-To-Text), we discovered that the eval method have an unintentional but very serious mistake in generating predicted strings, which is using teacher forcing implicitly. 
+1. **Clone the repository:**
 
-The code which reaches my concern is:
+    ```bash
+    git clone https://github.com/AmanSikarwar/EEG-To-Text
+    cd EEG-To-Text
+    ```
 
+2. **Install Dependencies:** Ensure you have Python 3 and PyTorch installed. Install other required packages (a `requirements.txt` file might be needed):
 
-```python
-seq2seqLMoutput = model(input_embeddings_batch, input_masks_batch, input_mask_invert_batch, target_ids_batch)
-logits = seq2seqLMoutput.logits # bs*seq_len*voc_sz
-probs = logits[0].softmax(dim = 1)
-values, predictions = probs.topk(1)
-predictions = torch.squeeze(predictions)
-predicted_string = tokenizer.decode(predictions) 
+    ```bash
+
+    pip install torch transformers numpy tqdm evaluate nltk rouge-score scikit-learn yagmail h5py fuzzy_match
+    ```
+
+3. **Download Datasets:** Place the raw ZuCo `.mat` files in the appropriate `./dataset/ZuCo/` subdirectories (e.g., `./dataset/ZuCo/task1-SR/Matlab_files/`). Download the Stanford Sentiment Treebank dataset if needed and place it in `./dataset/stanfordsentiment/`.
+
+## Data Preparation
+
+Run the preparation script to convert ZuCo `.mat` files into `.pickle` format and generate necessary sentiment label files:
+
+```bash
+bash scripts/prepare_dataset.sh
 ```
 
-Therefore resulting in [predictions like below](https://github.com/MikeWangWZHL/EEG-To-Text/blob/main/results/task1_task2_taskNRv2-BrainTranslator_skipstep1-all_generation_results-7_22.txt#L61):
+This script utilizes utilities in the `./util/` directory (`construct_dataset_mat_to_pickle_v1.py`, `construct_dataset_mat_to_pickle_v2.py`, `get_sentiment_labels.py`, `get_SST_ternary_dataset.py`). Processed data will be stored in `./dataset/ZuCo/.../pickle/` and `./dataset/stanfordsentiment/`.
 
+## Training
+
+Training is performed using Python scripts. Configuration is often managed via command-line arguments and saved `.json` files in `./config/`. Checkpoints are saved in `./checkpoints/`.
+
+* **EEG-to-Text Decoding:**
+  * Use `train_decoding2.py` (or potentially `train_decoding.py`).
+  * Example script: `run_and_notify2.sh` shows how to run `train_decoding2.py` with specific parameters for a 2-step training process.
+* **EEG Sentiment Baseline:**
+  * Use `train_sentiment_baseline.py`.
+  * Example script: `scripts/train_eeg_sentiment_baseline.sh`
+* **Text-based Sentiment Classifier:**
+  * Use `train_sentiment_textbased.py`.
+  * Can be trained on ZuCo text or SST.
+
+Refer to the scripts in the `scripts/` directory and `run_and_notify2.sh` for detailed examples of training commands and parameters.
+
+## Evaluation
+
+Evaluation scripts measure performance using various metrics (BLEU, ROUGE, WER, CER for decoding; Accuracy, F1 for sentiment). Results are typically saved in `./results/` and `./score_results/`.
+
+* **EEG-to-Text Decoding:**
+  * Use `eval_decoding2.py` (or potentially `eval_decoding.py`).
+  * Example usage is shown within `run_and_notify2.sh`.
+* **Sentiment Analysis:**
+  * Use `eval_sentiment.py`.
+  * Example script for zero-shot evaluation: `scripts/eval_sentiment_zeroshot_pipeline.sh`
+
+## Monitoring
+
+The `run_and_notify2.sh` script provides an example of how to run a full training and evaluation pipeline and send email notifications upon completion or failure using `yagmail`. Configure sender/recipient emails within the script. Logs are stored in `./run_logs/`.
+
+## Directory Structure
+
+```text
+.
+├── checkpoints/       # Saved model weights (.pt files)
+│   ├── decoding/
+│   └── eeg_sentiment/
+│   └── text_sentiment_classifier/
+├── config/            # Configuration files (.json) for experiments
+│   ├── decoding/
+│   └── eeg_sentiment/
+│   └── text_sentiment_classifier/
+├── data.py            # PyTorch Dataset and DataLoader classes (ZuCo_dataset, SST_tenary_dataset)
+├── dataset/           # Raw and processed datasets
+│   ├── ZuCo/
+│   └── stanfordsentiment/
+├── eval_decoding.py   # Evaluation script for EEG-to-Text (older version?)
+├── eval_decoding2.py  # Main evaluation script for EEG-to-Text
+├── eval_sentiment.py  # Evaluation script for sentiment classification tasks
+├── model_decoding.py  # Decoding model definitions (BrainTranslator, T5Translator, etc.)
+├── model_sentiment.py # Sentiment model definitions (Baselines, ZeroShot, etc.)
+├── results/           # Detailed output files from evaluation runs (.txt)
+├── run_logs/          # Logs generated by run_and_notify scripts
+├── run_and_notify.sh  # Example script for running experiments with notifications (older?)
+├── run_and_notify2.sh # Example script for running experiments with notifications
+├── score_results/     # Summarized score files from evaluation runs (.txt)
+├── scripts/           # Helper shell scripts for training/evaluation/preparation
+├── train_decoding.py  # Training script for EEG-to-Text (older version?)
+├── train_decoding2.py # Main training script for EEG-to-Text
+├── train_sentiment_baseline.py # Training script for EEG sentiment baselines
+├── train_sentiment_textbased.py # Training script for text-based sentiment classifiers
+└── util/              # Utility scripts for data processing, etc.
 ```
-target string: It isn't that Stealing Harvard is a horrible movie -- if only it were that grand a failure!
-predicted string:  was't a the. is was a bad place, it it it were a.. movie.
-################################################
-
-
-target string: It just doesn't have much else... especially in a moral sense.
-predicted string:  was so't work the to to and not the country sense.
-################################################
-
-
-target string: Those unfamiliar with Mormon traditions may find The Singles Ward occasionally bewildering.
-predicted string:  who with the history may be themselves Mormoning''s amusingering.
-################################################
-
-
-target string: Viewed as a comedy, a romance, a fairy tale, or a drama, there's nothing remotely triumphant about this motion picture.
-predicted string:  the from a whole, it film, and comedy tale, and a tragic, it is nothing quite romantic about it. picture.
-################################################
-
-
-target string: But the talented cast alone will keep you watching, as will the fight scenes.
-predicted string:  the most and of cannot not the entertained. and they the music against.
-################################################
-
-
-target string: It's solid and affecting and exactly as thought-provoking as it should be.
-predicted string:  was a, it, it what it.provoking as it is be.
-################################################
-
-
-target string: Thanks largely to Williams, all the interesting developments are processed in 60 minutes -- the rest is just an overexposed waste of film.
-predicted string:  to to the, the of films and in in in a minutes. and longest is a a afteragerposure, of time time
-################################################
-
-
-target string: Cantet perfectly captures the hotel lobbies, two-lane highways, and roadside cafes that permeate Vincent's days
-predicted string: urtor was describes the spirit'sies and the ofstory streets, and the parking of areate the's life.</s>'sgggggggg,,,,,,,,,,,,,,</s>,,,,,
-################################################
-
-
-target string: An important movie, a reminder of the power of film to move us and to make us examine our values.
-predicted string: nie part in " classic of the importance of the, shape people, our make us think our lives,
-################################################
-
-
-target string: Too much of this well-acted but dangerously slow thriller feels like a preamble to a bigger, more complicated story, one that never materializes.
-predicted string:  bad of a is-known film not over- is like a film-ble to a much, more dramatic story. which that is endsizes.
-```
-
-In addition, we noticed that some people are using it as code base which generates concerning results. We are not condemning these researchers, we just want to notice them and maybe we can do something together to resolve this problem. 
-
-[BELT Bootstrapping Electroencephalography-to-Language Decoding and Zero-Shot SenTiment Classification by Natural Language Supervision](https://arxiv.org/pdf/2309.12056)
-
-[Aligning Semantic in Brain and Language: A Curriculum Contrastive Method for Electroencephalography-to-Text Generation](https://ieeexplore.ieee.org/iel7/7333/4359219/10248031.pdf)
-
-[UniCoRN: Unified Cognitive Signal ReconstructioN bridging cognitive signals and human language](https://arxiv.org/pdf/2307.05355)
-
-[Semantic-aware Contrastive Learning for Electroencephalography-to-Text Generation with Curriculum Learning](https://arxiv.org/pdf/2301.09237)
-
-[DeWave: Discrete EEG Waves Encoding for Brain Dynamics to Text Translation](https://arxiv.org/pdf/2309.14030)
-
-We have written a corrected version to use model.generate to evaluate the model, the result is not so good. 
-Basicly, we changed the model_decoding.py and eval_decoding.py to add model.generate for its originally nn.Module class model, and used model.generate to predict strings.
-
-**We are open to everyone to scrutinize on this corrected code and run the code. Then, we will show the final performance of this model in this repo and formalize a technical paper.**
-# We really appreciate the great contribution made by Mr. Wang, however, we should prevent others from continuing this misunderstanding. 
-
-
-This work was supported by the Culture, Sports and Tourism R&D Program through the Korea Creative Content Agency grant funded by the Ministry of Culture, Sports and Tourism (RS-2023-00226263), the Institute for Information & Communications Technology Planning & Evaluation (IITP) grant funded by the Korea government (MSIT) (No. RS-2024-00509257, Global AI Frontier Lab), the Information Technology Research Center (ITRC) support program (IITP-2024-RS-2024-00438239) supervised by the IITP, and the IITP grant funded by the Korea government (MSIT) (No. RS-2022-00155911, Artificial Intelligence Convergence Innovation Human Resources Development, Kyung Hee University).
