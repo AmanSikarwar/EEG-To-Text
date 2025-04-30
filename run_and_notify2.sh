@@ -95,36 +95,36 @@ cleanup_and_notify() {
 
 trap cleanup_and_notify EXIT INT TERM
 
-# echo "--- Starting Training Phase: ${TRAIN_SCRIPT_ID} ---"
-# echo "Logging to ${TRAIN_LOG}"
-# echo "Checkpoint Base Name: ${CHECKPOINT_BASE_NAME}"
+echo "--- Starting Training Phase: ${TRAIN_SCRIPT_ID} ---"
+echo "Logging to ${TRAIN_LOG}"
+echo "Checkpoint Base Name: ${CHECKPOINT_BASE_NAME}"
 
-# echo "Running Training Command (2-Step)..."
-# # Ensure CUDA_VISIBLE_DEVICES matches the number of devices expected by DataParallel (e.g., 2 if device_ids=[0,1])
-# CUDA_VISIBLE_DEVICES=0 python train_decoding2.py \
-#     --model_name ${MODEL_NAME} \
-#     --task_name ${TASK_NAME} \
-#     --two_step \
-#     --pretrained \
-#     --not_load_step1_checkpoint \
-#     --num_epoch_step1 ${NUM_EPOCH_S1} \
-#     --num_epoch_step2 ${NUM_EPOCH_S2} \
-#     --train_input ${TRAIN_INPUT} \
-#     -lr1 ${LR1} \
-#     -lr2 ${LR2} \
-#     -b ${BATCH_SIZE} \
-#     -s ./checkpoints/decoding \
-#     --cuda cuda:0 \
-#     > >(tee -a "${TRAIN_LOG}") 2>&1
+echo "Running Training Command (2-Step)..."
+# Ensure CUDA_VISIBLE_DEVICES matches the number of devices expected by DataParallel (e.g., 2 if device_ids=[0,1])
+CUDA_VISIBLE_DEVICES=0 python train_decoding2.py \
+    --model_name ${MODEL_NAME} \
+    --task_name ${TASK_NAME} \
+    --two_step \
+    --pretrained \
+    --not_load_step1_checkpoint \
+    --num_epoch_step1 ${NUM_EPOCH_S1} \
+    --num_epoch_step2 ${NUM_EPOCH_S2} \
+    --train_input ${TRAIN_INPUT} \
+    -lr1 ${LR1} \
+    -lr2 ${LR2} \
+    -b ${BATCH_SIZE} \
+    -s ./checkpoints/decoding \
+    --cuda cuda:0 \
+    > >(tee -a "${TRAIN_LOG}") 2>&1
 
-# if [[ $? -ne 0 ]]; then
-#     echo "ERROR: ${TRAIN_SCRIPT_ID} - Training failed." | tee -a "$STATUS_FILE"
-#     OVERALL_STATUS="FAILURE"
-#     exit 1
-# fi
-# echo "Training finished."
+if [[ $? -ne 0 ]]; then
+    echo "ERROR: ${TRAIN_SCRIPT_ID} - Training failed." | tee -a "$STATUS_FILE"
+    OVERALL_STATUS="FAILURE"
+    exit 1
+fi
+echo "Training finished."
 
-# echo "--- Training Phase Successfully Completed ---"
+echo "--- Training Phase Successfully Completed ---"
 
 
 echo "--- Starting Evaluation Phase: ${EVAL_SCRIPT_ID} ---"
