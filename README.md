@@ -77,7 +77,7 @@ Refer to the scripts in the `scripts/` directory and `run_and_notify2.sh` for de
 
 ## Evaluation
 
-Evaluation scripts measure performance using various metrics (BLEU, ROUGE, WER, CER for decoding; Accuracy, F1 for sentiment). Results are typically saved in `./results/` and `./score_results/`.
+Evaluation scripts measure the performance using various metrics (BLEU, ROUGE, WER, CER for decoding; Accuracy, F1 for sentiment). Results are typically saved in `./results/` and `./score_results/`.
 
 * **EEG-to-Text Decoding:**
   * Use `eval_decoding2.py` (or potentially `eval_decoding.py`).
